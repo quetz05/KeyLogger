@@ -1,5 +1,5 @@
 CC    = g++
-FILES = main.cpp
+FILES = main.cpp node.cpp tree.cpp treecheck.cpp
 FLAGS = -fpermissive -lpthread -lm -std=c++11
 
 all:	
