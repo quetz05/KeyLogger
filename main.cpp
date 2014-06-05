@@ -119,13 +119,13 @@ void init() {
 			fprintf(data, "%c :: %d\n", chars[value], value);
 			fflush(data);
 	
-			/*if(checker.checkNextLetter(chars[value])){
+			if(checker.checkNextLetter(chars[value])){
 				if(checker.isCurrentNodeTerminal()) {
 					printTime(data);
 					fprintf(data, "%s\n", checker.getFoundWord().c_str());
 					fflush(data);
 				}
-			}*/	
+			}	
 
 		}
 	}
