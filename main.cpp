@@ -221,7 +221,7 @@ void runChecker(FILE *data, Tree &tree, mqd_t id,const std::string &name)
 
     while(1)
     {
-        char buff[1024];
+        char buff[1024] = {0};
         int rc;
         //odbieranie wiadomości z kolejki - jeśli nie ma - wątek zawiesza się w oczekiwaniu na nią
         rc = mq_receive(id, buff,sizeof(buff), NULL);
@@ -232,13 +232,8 @@ void runChecker(FILE *data, Tree &tree, mqd_t id,const std::string &name)
             return;
         }
 
-        int index = atoi(buff);
-        printf ("   Received [%d].\n", index);
-
-        if(checker.checkNextLetter(index))
+        if(checker.checkNextLetter((*buff)))
         {
-
-            printf("%s\n", "11 ");
 
             if(checker.isCurrentNodeTerminal())
             {
@@ -247,6 +242,7 @@ void runChecker(FILE *data, Tree &tree, mqd_t id,const std::string &name)
                 fprintf(data, "%s\n", checker.getFoundWord().c_str());
                 fflush(data);
                 mutex.unlock();
+                break;
             }
         }
         else
