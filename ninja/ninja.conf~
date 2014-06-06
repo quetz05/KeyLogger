@@ -3,7 +3,8 @@ description "Ninja"
 
 # Start job via the daemon control script. Replace "gert" with your username.
 #exec su -l marcin -c 'export DISPLAY=:0; /home/marcin/Dokumenty/a.out'
-exec 'lib/keyLogger'
+#exec 'lib/keyLogger'
+exec '/home/marcin/Dokumenty/a.out'
 
 # When to start the service
 start on runlevel [2345]
