@@ -13,7 +13,7 @@ then
 	exit
 fi
 
-if test $# -lt 2
+if test $# -lt 1
 then
 	echo 'Usage : keylogger_conf --auto {true|false}'
 	echo '   or : keylogger_conf --event _liczba_'
@@ -50,6 +50,12 @@ do
 	fi
 
 	case $komenda in
+		"--reload")
+			stop ninja
+			start ninja
+			continue
+			;;
+
 		"--auto") 
 			if [ $1 = "false" -o $1 = "true" ]
 			then
