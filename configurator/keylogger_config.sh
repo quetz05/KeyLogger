@@ -15,11 +15,12 @@ fi
 
 if test $# -lt 1
 then
-	echo 'Usage : keylogger_conf --auto {true|false}'
-	echo '   or : keylogger_conf --event _liczba_'
-	echo '	 or : keylogger_conf --log sciezka_do_pliku'
-	echo '   or : keylogger_conf --add word1 word2 ...'
-	echo '   or : keylogger_conf --rem word1 word2 ...'
+	echo 'Usage : keylogger --auto {true|false}'
+	echo '   or : keylogger --event _liczba_'
+	echo '	 or : keylogger --log sciezka_do_pliku'
+	echo '   or : keylogger --add word1 word2 ...'
+	echo '   or : keylogger --rem word1 word2 ...'
+	echo '   or : keylogger --reload'
 	echo ''
 	echo 'Powyzsze opcje mozna laczyc, np. keylogger_conf --auto true --add word1 --rem word2'
 	echo '\t --auto \t: czy program ma startować automatycznie'
@@ -28,6 +29,7 @@ then
 	echo '\t --log \t: konfiguracja sciezki do pliku w ktorym maja byc zapisywane zdarzenia'
 	echo '\t --add \t: dodanie slow do listy wykrywania'
 	echo '\t --rem \t: usuniecie slow z listy wykrywania'
+	echo '\t --reload \t: wczytanie aktualnej konfiguracji przez program monitorujacy'
 	exit
 fi
 
