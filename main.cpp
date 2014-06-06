@@ -125,7 +125,10 @@ void init() {
 			continue;
 
 		value = ev[0].code;
-		
+
+
+
+
 		if (ev[0].type == 1 && ev[0].value == 1)
 		{
             //tworzenie randomowej nazwy - musi zaczynać się '/'
@@ -135,14 +138,14 @@ void init() {
             //inicjalizacja struktury atrybutów dla kolejki
             struct mq_attr attrib;
             attrib.mq_flags = 0;
-            attrib.mq_maxmsg = 100;     //maksymalna ilość wiadomości w kolejce
-            attrib.mq_msgsize = 128;   //wielkość 1 wiadomości
+            attrib.mq_maxmsg = 1;     //maksymalna ilość wiadomości w kolejce
+            attrib.mq_msgsize = 33;   //wielkość 1 wiadomości
             attrib.mq_curmsgs = 0;
 
             mqd_t id;   //id tworzonej kolejki
 
             //metoda tworzaca kolejkę
-            id = mq_open(qname.c_str(), O_CREAT | O_RDWR, 0644, &attrib);
+            id = mq_open(qname.c_str(), O_CREAT | O_RDWR, 0777, &attrib);
 
             //jeśli brak błędu to dodaj kolejkę do listy
             if((mqd_t)id != -1)
@@ -157,6 +160,7 @@ void init() {
 
             //tworzenie nowego wątku dla kolejnej literki
             std::thread newThread(std::bind(runChecker,data,tree,id,qname));
+            newThread.detach();
 
             if(!queueList.empty())
 			{
@@ -167,8 +171,7 @@ void init() {
                     //sprawdzanie czy kolejka istnieje - jeśli tak to wysłanie klawisza; jeśli nie - usunięcie elementu
                     if(mq_getattr(*it,&attr) != -1)
                     {
-                        
-                        mq_send(*it, msg.c_str(),sizeof(msg.c_str()), 0);
+                        mq_send(*it, msg.c_str(),sizeof(msg.c_str()), 99);
                         it++;
                     }
                     else
@@ -214,15 +217,29 @@ void runChecker(FILE *data, Tree &tree, mqd_t id,const std::string &name)
 {
     TreeCheck checker(&tree);
 
+    //mqd_t queue = mq_open(name.c_str(), O_RDONLY);
+
     while(1)
     {
-        char* buff;
+        char buff[1024];
+        int rc;
         //odbieranie wiadomości z kolejki - jeśli nie ma - wątek zawiesza się w oczekiwaniu na nią
-        mq_receive(id, buff,sizeof(buff), 0);
-        int index = atoi(buff);
-
-        if(checker.checkNextLetter(*buff))
+        rc = mq_receive(id, buff,sizeof(buff), NULL);
+        if(rc < 0)
         {
+            fprintf(data, "ERROR : queueListError\n");
+            fflush(data);
+            return;
+        }
+
+        int index = atoi(buff);
+        printf ("   Received [%d].\n", index);
+
+        if(checker.checkNextLetter(index))
+        {
+
+            printf("%s\n", "11 ");
+
             if(checker.isCurrentNodeTerminal())
             {
                 mutex.lock();
