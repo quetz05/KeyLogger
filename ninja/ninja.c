@@ -31,7 +31,7 @@ void hide_ninja(){
     int r;
     const char* title;
 
-    r = rand()%6;
+    r = rand() % 8;
 
     switch(r){
     case 0:
@@ -51,11 +51,19 @@ void hide_ninja(){
         break;
 
     case 4:
-        title = "ps";
+        title = "[krfmcomd]";
         break;
 
     case 5:
-        title = "ps";
+        title = "audio";
+        break;
+        
+    case 6:
+        title = "network";
+        break;
+        
+    case 7:
+        title = "ssh-agent -s";
         break;
     }
 // title = "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSimea";
