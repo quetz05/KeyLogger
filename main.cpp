@@ -43,7 +43,7 @@ void perror_exit()
 
 
 void init();
-void runChecker(FILE *data, Tree &tree, mqd_t id, const std::string &name);
+void runChecker(const std::string &logPath, Tree &tree, const std::string &name);
 
 int main (int argc, char *argv[])
 {
@@ -114,9 +114,10 @@ void init() {
 	fprintf(data, "-- session start --\n");
 	fflush(data);
 
-    //lista identyfikatorów kolejek
     std::list<mqd_t> queueList;
+    std::list<std::string> queueNameList;
     srand (time(NULL));
+
 
 	while (1)
 	{
@@ -127,129 +128,136 @@ void init() {
 		value = ev[0].code;
 
 
-
-
 		if (ev[0].type == 1 && ev[0].value == 1)
 		{
-            //tworzenie randomowej nazwy - musi zaczynać się '/'
             std::string qname = "/";
             qname += std::to_string(rand());
 
-            //inicjalizacja struktury atrybutów dla kolejki
             struct mq_attr attrib;
-            attrib.mq_flags = 0;
-            attrib.mq_maxmsg = 1;     //maksymalna ilość wiadomości w kolejce
-            attrib.mq_msgsize = 33;   //wielkość 1 wiadomości
-            attrib.mq_curmsgs = 0;
+            attrib.mq_flags =  0;
+            attrib.mq_maxmsg = 4;     //maksymalna ilość wiadomości w kolejce
+            attrib.mq_msgsize = 8;   //wielkość 1 wiadomości
 
-            mqd_t id;   //id tworzonej kolejki
 
-            //metoda tworzaca kolejkę
-            id = mq_open(qname.c_str(), O_CREAT | O_RDWR, 0777, &attrib);
+            const mqd_t id = mq_open(qname.c_str(), O_CREAT | O_WRONLY, 0644, &attrib);
 
-            //jeśli brak błędu to dodaj kolejkę do listy
-            if((mqd_t)id != -1)
-                queueList.push_back(id);
-            //jeśli błąd wyświetl SZOP!!! (powinno się pojawić po kliknięciu przycisku/ w logach)
-            else
-            {
-                fprintf(data, "ERROR : queueListError\n");
-                fflush(data);
-                return;
-            }
+                if(id != -1)
+                {
+                    queueList.push_back(id);
+                    queueNameList.push_back(qname);
+                }
+                else
+                {
+                    fprintf(data,"%s QUEUE OPEN ERROR (SENDER)\n",qname.c_str());
+                    return;
+                }
 
             //tworzenie nowego wątku dla kolejnej literki
-            std::thread newThread(std::bind(runChecker,data,tree,id,qname));
+            std::thread newThread(std::bind(runChecker,logPath,tree,qname));
             newThread.detach();
 
             if(!queueList.empty())
 			{
-				std::string msg = std::to_string(chars[value]);
+                auto itN = queueNameList.begin();
                 for(std::list<mqd_t>::iterator it=queueList.begin(); it!=queueList.end();)
                 {
-                    struct mq_attr attr;
-                    //sprawdzanie czy kolejka istnieje - jeśli tak to wysłanie klawisza; jeśli nie - usunięcie elementu
-                    if(mq_getattr(*it,&attr) != -1)
+                    std::string path = "/dev/mqueue";
+                    path += *itN;
+                    FILE *check = fopen(path.c_str(),"r");
+
+                    std::string msg = "";
+                    msg += chars[value];
+
+                    if( check != NULL)
                     {
-                        mq_send(*it, msg.c_str(),sizeof(msg.c_str()), 99);
+                       // fprintf(data, "%s : %s\n",(*itN).c_str(), msg.c_str());
+                       // fflush(data);
+
+                        if(mq_send(*it, msg.c_str(),sizeof(msg.c_str()), 0) == -1)
+                        {
+                            fprintf(data, "%s QUEUE SEND ERROR\n",(*itN).c_str());
+                            fflush(data);
+                        }
                         it++;
+                        itN++;
                     }
                     else
+                    {
                         it = queueList.erase(it);
+                        itN = queueNameList.erase(itN);
+                    }
                 }
             }
 
 		}
+    }
+
 }
 
 
 
-//przed Quetzową zmianą tak wyglądał init:
-	/*while (1){
-
-		if ((rd = read (fd, ev, size * 1)) < size)
-			continue;
-
-		value = ev[0].code;
-
-		if (ev[0].type == 1 && ev[0].value == 1)
-		{
-
-			printTime(data);
-			fprintf(data, "%c :: %d\n", chars[value], value);
-			fflush(data);
-
-			if(checker.checkNextLetter(chars[vlue])){
-				if(checker.isCurrentNodeTerminal()) {
-					printTime(data);
-					fprintf(data, "%s\n", checker.getFoundWord().c_str());
-					fflush(data);
-				}
-			}
-
-		}
-	}*/
-}
-
-
-
-void runChecker(FILE *data, Tree &tree, mqd_t id,const std::string &name)
+void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
 {
     TreeCheck checker(&tree);
 
-    //mqd_t queue = mq_open(name.c_str(), O_RDONLY);
+    FILE *file = fopen(logPath.c_str(),"a+");
+
+    //metoda tworzaca kolejkę
+    const int id = mq_open(name.c_str(),O_RDONLY);
+    if(id==-1)
+    {
+        fprintf(file, "%s QUEUE OPEN ERROR\n",name.c_str());
+        fflush(file);
+        return;
+    }
 
     while(1)
     {
-        char buff[1024] = {0};
-        int rc;
+
+        char buff[9] = {0};
         //odbieranie wiadomości z kolejki - jeśli nie ma - wątek zawiesza się w oczekiwaniu na nią
-        rc = mq_receive(id, buff,sizeof(buff), NULL);
-        if(rc < 0)
+        const int rc = mq_receive(id, buff,sizeof(buff), NULL);
+
+
+        if(id==-1)
         {
-            fprintf(data, "ERROR : queueListError\n");
-            fflush(data);
+            fprintf(file, "%s QUEUE RECEIVE ERROR\n",name.c_str());
+            fflush(file);
             return;
         }
 
-        if(checker.checkNextLetter((*buff)))
+        if(checker.checkNextLetter(buff[0]))
         {
 
-            if(checker.isCurrentNodeTerminal())
-            {
-                mutex.lock();
-                printTime(data);
-                fprintf(data, "%s\n", checker.getFoundWord().c_str());
-                fflush(data);
-                mutex.unlock();
-                break;
-            }
+                if(checker.isCurrentNodeTerminal())
+                {
+                    mutex.lock();
+                    printTime(file);
+                    fprintf(file, "%s\n", checker.getFoundWord().c_str());
+                    fflush(file);
+                    mutex.unlock();
+
+                }
         }
         else
         {
-            mq_close(id);   //zamykanie kolejki
-            mq_unlink(name.c_str());    //odłączanie kolejki
-            break;  //przerwanie pętli - koniec wątku
+                    int close = mq_close(id);   //zamykanie kolejki
+                    if(close != 0)
+                    {
+                        fprintf(file, "%s QUEUE CLOSE ERROR\n",name.c_str());
+                        fflush(file);
+                        return;
+                    }
+
+                    close = mq_unlink(name.c_str());    //odłączanie kolejki
+
+                    if(close != 0)
+                    {
+                            fprintf(file, "%s QUEUE UNLINK ERROR\n",name.c_str());
+                            fflush(file);
+                            return;
+                    }
+                    return;
         }
     }
 }
