@@ -14,6 +14,7 @@ public:
     Node *getNodeForCharacter(char c);
     int childCount();
     std::string getWord();
+    void setParent(Node* n);
 
 
     bool operator==(const Node& node){

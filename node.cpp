@@ -58,7 +58,7 @@ std::string Node::getWord()
 {
 
     Node* node = this;
-    std::string word;
+    std::string word ="";
 
     while(node->parent != NULL){
         word.insert(word.begin(), node->getChar());
@@ -79,3 +79,6 @@ void Node::setTerminal(bool value)
     terminal = value;
 }
 
+void Node::setParent(Node* n){
+    this->parent = n;
+}

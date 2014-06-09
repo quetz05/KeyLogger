@@ -55,7 +55,7 @@ int main (int argc, char *argv[])
 
 }
 
-void loadData(std::string &eventPath, std::string &logPath) {
+void loadData(std::string &eventPath, std::string &logPath, std::vector<std::string> *slowa) {
 
 	std::ifstream stream;
 	stream.open("/etc/keylogger.conf");
@@ -67,6 +67,11 @@ void loadData(std::string &eventPath, std::string &logPath) {
 	ss << "/dev/input/event" << event;
 	eventPath = ss.str();
 	stream >> logPath;
+        stream >> temp;
+        while(!stream.eof()){
+            stream >> temp;
+            slowa->push_back(temp);
+        }
 	stream.close();
 
 
@@ -92,12 +97,9 @@ void init() {
 
 	std::string logPath;
 	std::string eventPath;
-
-	loadData(eventPath, logPath);
-
 	std::vector<std::string> slowa;
-	slowa.push_back("sal");
-	slowa.push_back("sala");
+	loadData(eventPath, logPath, &slowa);
+
 
 	Tree tree(slowa);
 	//TreeCheck checker(&tree);

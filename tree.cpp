@@ -11,6 +11,7 @@
 Tree::Tree(std::vector<std::string> slowa){
 
     this->root = new Node(NULL);
+    this->root->setParent(NULL);
     //this->root->insertCharacter("c")
     for(std::vector<std::string>::iterator it= slowa.begin(); it != slowa.end(); ++it){
 
