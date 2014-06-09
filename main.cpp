@@ -48,11 +48,10 @@ void runChecker(const std::string &logPath, Tree &tree, const std::string &name)
 
 int main (int argc, char **argv)
 {
-	std::cout << "siema\n";
-    init_ninja(argc, argv);
-	std::cout << "hide\n";
+
+   init_ninja(argc, argv);
    hide_ninja();
-	std::cout << " po hide\n";
+
 //	if (!fork())
 		init();
 //	else

