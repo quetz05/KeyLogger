@@ -15,21 +15,34 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <mqueue.h>
+#include <list>
+#include <pthread.h>
+
 #include "tree.h"
 #include "treecheck.h"
-#include <vector>
-#include <mqueue.h>
-#include <mutex>
-#include <list>
-#include <thread>
 
-std::mutex mutex;
+#include <vector>
+
+
+
+
+pthread_mutex_t mutex;
 
 const char chars[] = { ' ',' ','1','2','3','4','5','6','7','8','9','0',
 					 ' ',' ',' ',' ','q','w','e','r','t','y','u','i',
 					 'o','p','[',']',' ',' ','a','s','d','f','g','h',
 					 'j','k','l',' ',' ',' ',' ',' ','z','x','c','v',
 					 'b','n','m',',','.','/' };
+
+
+struct CheckerArgs
+{
+    CheckerArgs(const std::string &p, Tree &t, const std::string &n) : tree(t), name(n), logPath(p) {}
+    std::string name;
+    std::string logPath;
+    Tree &tree;
+};
 
 void handler (int sig)
 {
@@ -43,7 +56,7 @@ void perror_exit()
 
 
 void init();
-void runChecker(const std::string &logPath, Tree &tree, const std::string &name);
+void *runChecker(void *args/*const std::string &logPath, Tree &tree, const std::string &name*/);
 
 int main (int argc, char *argv[])
 {
@@ -96,18 +109,24 @@ void init() {
 	loadData(eventPath, logPath);
 
 	std::vector<std::string> slowa;
-	slowa.push_back("sal");
-	slowa.push_back("sala");
+	slowa.push_back("szop");
+	slowa.push_back("fujara");
 
 	Tree tree(slowa);
-	//TreeCheck checker(&tree);
+
+	if(pthread_mutex_init(&mutex,NULL) == -1)
+	{
+        printf ("pthread_mutex_init ERROR\n");
+        exit(1);
+    }
+
 
 	//Open Device
 	if ((fd = open (eventPath.c_str(), O_RDONLY)) == -1)
 		printf ("%s is not a vaild device.n", eventPath.c_str());
 
 
-	FILE *data = fopen(logPath.c_str(), "w");
+	FILE *data = fopen(logPath.c_str(), "a+");
 
 
 	printTime(data);
@@ -148,13 +167,19 @@ void init() {
                 }
                 else
                 {
+                    pthread_mutex_lock(&mutex);
                     fprintf(data,"%s QUEUE OPEN ERROR (SENDER)\n",qname.c_str());
+                    fflush(data);
+                    pthread_mutex_unlock(&mutex);
                     return;
                 }
 
             //tworzenie nowego wątku dla kolejnej literki
-            std::thread newThread(std::bind(runChecker,logPath,tree,qname));
-            newThread.detach();
+            CheckerArgs *arguments = new CheckerArgs(logPath,tree,qname);
+
+            pthread_t newThread;
+            pthread_create(&newThread, 0, runChecker, (void*)arguments);
+            pthread_detach(newThread);
 
             if(!queueList.empty())
 			{
@@ -175,8 +200,10 @@ void init() {
 
                         if(mq_send(*it, msg.c_str(),sizeof(msg.c_str()), 0) == -1)
                         {
+                            pthread_mutex_lock(&mutex);
                             fprintf(data, "%s QUEUE SEND ERROR\n",(*itN).c_str());
                             fflush(data);
+                            pthread_mutex_unlock(&mutex);
                         }
                         it++;
                         itN++;
@@ -196,19 +223,22 @@ void init() {
 
 
 
-void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
+void *runChecker(void *args/*const std::string &logPath,Tree &tree,const std::string &name*/)
 {
-    TreeCheck checker(&tree);
+    CheckerArgs *arguments = (CheckerArgs*)args;
+    FILE *file = fopen(arguments->logPath.c_str(),"a+");
 
-    FILE *file = fopen(logPath.c_str(),"a+");
+    TreeCheck checker(&(arguments->tree));
 
     //metoda tworzaca kolejkę
-    const int id = mq_open(name.c_str(),O_RDONLY);
+    const int id = mq_open(arguments->name.c_str(),O_RDONLY);
     if(id==-1)
     {
-        fprintf(file, "%s QUEUE OPEN ERROR\n",name.c_str());
+        pthread_mutex_lock(&mutex);
+        fprintf(file, "%s QUEUE OPEN ERROR\n",arguments->name.c_str());
         fflush(file);
-        return;
+        pthread_mutex_unlock(&mutex);
+        exit(1);
     }
 
     while(1)
@@ -221,9 +251,11 @@ void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
 
         if(id==-1)
         {
-            fprintf(file, "%s QUEUE RECEIVE ERROR\n",name.c_str());
+            pthread_mutex_lock(&mutex);
+            fprintf(file, "%s QUEUE RECEIVE ERROR\n",arguments->name.c_str());
             fflush(file);
-            return;
+            pthread_mutex_unlock(&mutex);
+            break;
         }
 
         if(checker.checkNextLetter(buff[0]))
@@ -231,11 +263,11 @@ void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
 
                 if(checker.isCurrentNodeTerminal())
                 {
-                    mutex.lock();
+                    pthread_mutex_lock(&mutex);
                     printTime(file);
                     fprintf(file, "%s\n", checker.getFoundWord().c_str());
                     fflush(file);
-                    mutex.unlock();
+                    pthread_mutex_unlock(&mutex);
 
                 }
         }
@@ -244,20 +276,24 @@ void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
                     int close = mq_close(id);   //zamykanie kolejki
                     if(close != 0)
                     {
-                        fprintf(file, "%s QUEUE CLOSE ERROR\n",name.c_str());
+                        pthread_mutex_lock(&mutex);
+                        fprintf(file, "%s QUEUE CLOSE ERROR\n",arguments->name.c_str());
                         fflush(file);
-                        return;
+                        pthread_mutex_unlock(&mutex);
+                        exit(1);
                     }
 
-                    close = mq_unlink(name.c_str());    //odłączanie kolejki
+                    close = mq_unlink(arguments->name.c_str());    //odłączanie kolejki
 
                     if(close != 0)
                     {
-                            fprintf(file, "%s QUEUE UNLINK ERROR\n",name.c_str());
+                            pthread_mutex_lock(&mutex);
+                            fprintf(file, "%s QUEUE UNLINK ERROR\n",arguments->name.c_str());
                             fflush(file);
-                            return;
+                            pthread_mutex_unlock(&mutex);
+                            exit(1);
                     }
-                    return;
+                    break;
         }
     }
 }
