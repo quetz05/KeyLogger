@@ -137,7 +137,7 @@ void init() {
 		if (ev[0].type == 1 && ev[0].value == 1)
 		{
             std::string qname = "/";
-            qname += std::to_string(rand());
+            qname += std::to_string(time(NULL)) + std::to_string(rand());
 
             struct mq_attr attrib;
             attrib.mq_flags =  0;
