@@ -38,7 +38,7 @@ fi
 if !([ -f $FILEPATH ])
 then
 	echo "Brak pliku konfiguracyjnego, zostanie on utworzony."
-	echo "auto=true\n4\n/home/keylogger.log\n------klucze------" > $FILEPATH
+	echo "auto=true\n4\n/var/log/keylogger.log\n------klucze------" > $FILEPATH
 	echo "Plik utworzony"
 fi
 
@@ -97,7 +97,13 @@ do
 			fi
 		;; 
 		"--log")
-			sed -i '3c\'$1 $FILEPATH		
+			if [ "$1" == "" ] || [[ $1 == --* ]]
+			then
+				echo "Brak argumentu dla --log!"
+				exit
+			else 
+				sed -i '3c\'$1 $FILEPATH		
+			fi
 		;;	
 		"--add")
 			if !(grep -Fxq $1 $FILEPATH)
@@ -114,6 +120,7 @@ do
 		;;
 		"--list")
 			tail -n +5 $FILEPATH
+			continue
 		;;
 	esac
 	shift
