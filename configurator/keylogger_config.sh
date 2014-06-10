@@ -21,6 +21,7 @@ then
 	echo '   or : keylogger --add word1 word2 ...'
 	echo '   or : keylogger --rem word1 word2 ...'
 	echo '   or : keylogger --reload'
+	echo '	 or : keylogger --list'
 	echo ''
 	echo 'Powyzsze opcje mozna laczyc, np. keylogger_conf --auto true --add word1 --rem word2'
 	echo '\t --auto \t: czy program ma startować automatycznie'
@@ -30,6 +31,7 @@ then
 	echo '\t --add \t: dodanie slow do listy wykrywania'
 	echo '\t --rem \t: usuniecie slow z listy wykrywania'
 	echo '\t --reload \t: wczytanie aktualnej konfiguracji przez program monitorujacy'
+	echo '\t --list \t: wylistowanie slow na liscie do wykrywania'
 	exit
 fi
 
@@ -109,6 +111,9 @@ do
 				sed -i 's/\<'$1'\>//g' $FILEPATH
 				sed -i '/./!d' $FILEPATH
 			fi		
+		;;
+		"--list")
+			tail -n +5 $FILEPATH
 		;;
 	esac
 	shift
