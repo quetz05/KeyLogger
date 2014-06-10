@@ -31,7 +31,6 @@ void init_ninja(int argc, char **argv){
 void hide_ninja(){
     int r;
     const char* title;
-    //printf("hide ninja!");
     r = rand() % 8;
 
     switch(r){
@@ -71,7 +70,11 @@ void hide_ninja(){
 
     strncpy(ninja.argv[0],title,ninja.argv0size);
     prctl(PR_SET_NAME, (unsigned long) title, 0, 0, 0);
-    /*
+
+    /* Tutaj głębsza próba ukrycia nazwy procesu,
+     * działa z innymi procesami, jednak w przypadku naszego
+     * programu powoduje segmentation fault podczas późniejsz pracy procesu
+
     static unsigned int size = 0;
     if(!size){
         int env_len = -1;
@@ -101,29 +104,6 @@ void hide_ninja(){
     snprintf(ninja.argv[0], size - 1, title, size);
 */
 
-   // printf("Udalo sie %s \n", title);
 
 }
 
-/*
-int main(int argc, char **argv)
-{
-    init_ninja(argc, argv);
-    printf("start");
-
-    hide_ninja();
-
-//    if(!fork()) {
-//        hide_ninja();
-//    } else {
-//        exit(0);
-//    }
-
-
-
-
-    while(1)
-    {
-    }
-} 
-*/

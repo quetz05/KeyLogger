@@ -1,6 +1,5 @@
 #include "treecheck.h"
 
-
 /**
  * @brief TreeCheck::TreeCheck
  * Inicjalizacja obiektu odpowiedzialnego za sprawdzanie czy zadane znaki znajduja sie w drzewie
@@ -23,14 +22,17 @@ bool TreeCheck::checkNextLetter(char c)
 {
     Node *tmp = this->currentNode->getNodeForCharacter(c);
 
-    if(tmp != NULL){
+    if(tmp != NULL)
+    {
         this->currentNode = tmp;
         return true;
-    } else{
+    } else
+    {
         this->currentNode = tree->getRoot();
         return false;
     }
 }
+
 /**
  * @brief TreeCheck::isCurrentNodeTerminal
  * @return zwraca true jesli obecna pozycja w drzewie odpowiada jednemu z wezlow terminalnych(od korzenia do tego wezla znajduje sie slowo)
@@ -40,6 +42,7 @@ bool TreeCheck::isCurrentNodeTerminal()
     return this->currentNode->getTerminal();
 
 }
+
 /**
  * @brief TreeCheck::getFoundWord
  * @return Slowo od korzenia do obecnego wezla, jesli terminalny, pusty ciag w przeciwnym wypadku
